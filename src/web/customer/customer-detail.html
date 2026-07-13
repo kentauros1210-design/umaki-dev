@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width", initial-scale="1.0">
+    <title>顧客詳細</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">顧客詳細</h2>
+        <!-- 表示モード -->
+        <div id="view-mode">
+        <table class="table">
+            <tr><th>ID</th><td id="detail-customerId"></td></tr>
+            <tr><th>会社名</th><td id="detail-companyName"></td></tr>
+            <tr><th>業種</th><td id="detail-industry"></td></tr>
+            <tr><th>連絡先</th><td id="detail-contact"></td></tr>
+            <tr><th>所在地</th><td id="detail-location"></td></tr>
+            <tr><th>作成日</th><td id="detail-createdDate"></td></tr>
+            <tr><th>更新日</th><td id="detail-updatedDate"></td></tr>
+        </table>
+        <a href="list.html" class="btn btn-secondary">一覧に戻る</a>
+        <button id="btn-delete" class="btn btn-danger">削除</button>
+        <button id="btn-edit" class="btn btn-secondary">編集</button>
+        </div>
+
+        <!-- 編集モード(最初は非表示) -->
+        <div id="edit-mode" style="display:none;">
+          <div class="form-group">
+            <label>会社名:</label>
+            <input type="text" class="form-control" id="edit-companyName">
+          </div>
+          <div class="form-group">
+            <label>業種:</label>
+            <input type="text" class="form-control" id="edit-industry">
+          </div>
+          <div class="form-group">
+            <label>連絡先:</label>
+            <input type="text" class="form-control" id="edit-contact">
+          </div>
+          <div class="form-group">
+            <label>所在地:</label>
+            <input type="text" class="form-control" id="edit-location">
+          </div>
+          <button id="btn-save" class="btn btn-primary">保存</button>
+          <button id="btn-cancel" class="btn btn-secondary">キャンセル</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import config from '../config.js';
+
+        const params = new URLSearchParams(window.location.search);
+        const customerId = params.get('id');
+
+        let customerData = null; // 編集時に使うため、取得したデータを保持しておく
+
+        fetch(`${config.apiUrl}/customers/${customerId}`)
+            .then(response => response.json())
+            .then(data => {
+                customerData = data;
+                document.getElementById('detail-customerId').textContent = data.customer_id;
+                document.getElementById('detail-companyName').textContent = data.company_name;
+                document.getElementById('detail-industry').textContent = data.industry;
+                document.getElementById('detail-contact').textContent = data.contact;
+                document.getElementById('detail-location').textContent = data.location;
+                document.getElementById('detail-createdDate').textContent = data.created_date;
+                document.getElementById('detail-updatedDate').textContent = data.updated_date;
+            })
+            .catch(error => console.error('Error:', error));
+
+        // 削除ボタンの処理
+        document.getElementById('btn-delete').addEventListener('click', function() {
+            const isConfirmed = confirm('削除していいですか?');
+            if (!isConfirmed) {
+                return;
+            }
+
+            fetch(`${config.apiUrl}/customers/${customerId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('削除しました。');
+                    window.location.href = 'list.html';
+                } else {
+                    alert('削除に失敗しました。');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // 編集ボタン → 編集モードに切り替え、現在の値を入力欄にセット
+        document.getElementById('btn-edit').addEventListener('click', function() {
+            document.getElementById('edit-companyName').value = customerData.company_name;
+            document.getElementById('edit-industry').value = customerData.industry;
+            document.getElementById('edit-contact').value = customerData.contact;
+            document.getElementById('edit-location').value = customerData.location;
+
+            document.getElementById('view-mode').style.display = 'none';
+            document.getElementById('edit-mode').style.display = 'block';
+        });
+
+        // 保存ボタン → UPDATEリクエスト
+        document.getElementById('btn-save').addEventListener('click', function() {
+            const updated = {
+                companyName: document.getElementById('edit-companyName').value,
+                industry: document.getElementById('edit-industry').value,
+                contact: document.getElementById('edit-contact').value,
+                location: document.getElementById('edit-location').value,
+            };
+
+            fetch(`${config.apiUrl}/customers/${customerId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updated)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert('更新しました。');
+                    location.reload();
+                } else {
+                    alert('更新に失敗しました。');
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        });
+
+        // キャンセルボタン → 表示モードに戻す
+        document.getElementById('btn-cancel').addEventListener('click', function() {
+            document.getElementById('edit-mode').style.display = 'none';
+            document.getElementById('view-mode').style.display = 'block';
+        });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+</body>
+</html>

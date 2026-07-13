@@ -9,52 +9,97 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h2 class="mb-4">顧客情報を入力してください</h2>
-        <form id="customer-form">
-            <div class="form-group">
-                <label for="companyName">会社名:</label>
-                <input type="text" class="form-control" id="companyName" name="companyName" required>
-            </div>
-            <div class="form-group">
-                <label for="industry">業種:</label>
-                <input type="text" class="form-control" id="industry" name="industry" required>
-            </div>
-            <div class="form-group">
-                <label for="contact">連絡先:</label>
-                <input type="text" class="form-control" id="contact" name="contact" required>
-            </div>
-            <div class="form-group">
-                <label for="location">所在地:</label>
-                <input type="text" class="form-control" id="location" name="location" required>
-            </div>
-            <button type="submit" class="btn btn-primary">送信</button>
-        </form>
+
+        <!-- 入力フォーム -->
+        <div id="input-form">
+            <h2 class="mb-4">顧客情報を入力してください</h2>
+            <form id="customer-form">
+                <div class="form-group">
+                    <label for="companyName">会社名:</label>
+                    <input type="text" class="form-control" id="companyName" name="companyName" required>
+                </div>
+                <div class="form-group">
+                    <label for="industry">業種:</label>
+                    <input type="text" class="form-control" id="industry" name="industry" required>
+                </div>
+                <div class="form-group">
+                    <label for="contact">連絡先:</label>
+                    <input type="text" class="form-control" id="contact" name="contact" required>
+                </div>
+                <div class="form-group">
+                    <label for="location">所在地:</label>
+                    <input type="text" class="form-control" id="location" name="location" required>
+                </div>
+                <button type="submit" class="btn btn-primary">送信</button>
+            </form>
+        </div>
+
+        <!-- 確認画面(最初は非表示) -->
+        <div id="confirm-view" style="display:none;">
+            <h2 class="mb-4">この内容で登録します。よろしいですか?</h2>
+            <table class="table">
+                <tr><th>会社名</th><td id="confirm-companyName"></td></tr>
+                <tr><th>業種</th><td id="confirm-industry"></td></tr>
+                <tr><th>連絡先</th><td id="confirm-contact"></td></tr>
+                <tr><th>所在地</th><td id="confirm-location"></td></tr>
+            </table>
+            <button id="btn-confirm-submit" class="btn btn-primary">登録する</button>
+            <button id="btn-back" class="btn btn-secondary">戻る</button>
+        </div>
+
     </div>
+
     <script type="module">
         import config from '../config.js';
 
-        document.getElementById('customer-form').addEventListener('submit', function(e) {
+        const form = document.getElementById('customer-form');
+        const inputForm = document.getElementById('input-form');
+        const confirmView = document.getElementById('confirm-view');
+        let currentFormData = null;
+
+        // 送信ボタン → 確認画面を表示
+        form.addEventListener('submit', function(e) {
             e.preventDefault();
-            const formData = new FormData(this);
+            currentFormData = new FormData(form);
+
+            document.getElementById('confirm-companyName').textContent = currentFormData.get('companyName');
+            document.getElementById('confirm-industry').textContent = currentFormData.get('industry');
+            document.getElementById('confirm-contact').textContent = currentFormData.get('contact');
+            document.getElementById('confirm-location').textContent = currentFormData.get('location');
+
+            inputForm.style.display = 'none';
+            confirmView.style.display = 'block';
+        });
+
+        // 確認画面の「登録する」ボタン → 実際にDB登録
+        document.getElementById('btn-confirm-submit').addEventListener('click', function() {
             fetch(config.apiUrl + '/add-customer', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded'
                 },
-                body: new URLSearchParams([...formData])
+                body: new URLSearchParams([...currentFormData])
             }).then(response => response.json())
               .then(data => {
-                if(data.success) {
+                if (data.success) {
                     alert('顧客情報が正常に保存されました。');
-                    // フォームをリセット
-                    document.getElementById('customer-form').reset();
+                    form.reset();
+                    confirmView.style.display = 'none';
+                    inputForm.style.display = 'block';
                 } else {
                     alert('保存に失敗しました。');
                 }
               })
               .catch(error => console.error('Error:', error));
         });
+
+        // 「戻る」ボタン → 入力画面に戻る
+        document.getElementById('btn-back').addEventListener('click', function() {
+            confirmView.style.display = 'none';
+            inputForm.style.display = 'block';
+        });
     </script>
+
     <!-- BootstrapのJavaScriptの読み込み -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
