@@ -1,0 +1,31 @@
+name: production deploy
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy-and-test-staging:
+    runs-on: ubuntu-latest
+    steps:
+      - id: ssh
+        uses: invi5H/ssh-action@v1
+        with:
+          SSH_HOST: ${{ secrets.DEV_SSH_HOST }}
+          SSH_PORT: ${{ secrets.DEV_SSH_PORT }}
+          SSH_USER: ${{ secrets.DEV_SSH_USER }}
+          SSH_KEY: ${{ secrets.DEV_SSHE_SSH_KEY }}
+      - run: ssh ${{ steps.ssh.outputs.SERVER }} bash /app/k_umaki/deploy.sh k_umaki
+      - run: ssh ${{ steps.ssh.outputs.SERVER }} bash -c "cd /ci && npx cypress run --browser chrome --spec cypress/e2e/k_umaki.*"
+
+  deploy-production:
+    needs: deploy-and-test-staging
+    runs-on: ubuntu-latest
+    steps:
+      - id: ssh
+        uses: invi5H/ssh-action@v1
+        with:
+          SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          SSH_PORT: ${{ secrets.PROD_SSH_PORT }}
+          SSH_USER: ${{ secrets.PROD_SSH_USER }}
+          SSH_KEY: ${{ secrets.PROD_SSHE_SSH_KEY }}
+      - run: ssh ${{ steps.ssh.outputs.SERVER }} bash /app/k_umaki/deploy.sh k_umaki
